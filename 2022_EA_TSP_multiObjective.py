@@ -528,7 +528,7 @@ def getCityBasedOnNr(cityList,nr):
     
 #Provide special initial solutions     <<<<<<<<<<<
 cityNumbersRoute1 = [10,19,12,14,22,4,1,15,7,2,11,5,16,23,6,17,20,25,9,18,13,3,24,21,8] #mindist
-cityNumbersRoute2 = [1, 17, 11, 19, 12, 23, 22, 13, 6, 21, 7, 14, 2, 24, 8, 16, 4, 20, 10, 5, 15, 3, 18, 9, 25] #minstress
+cityNumbersRoute2 = [1, 19, 12, 4, 24, 8, 16, 11, 17, 15, 5, 10, 20, 2, 14, 7, 21, 3, 18, 9, 23, 22, 13, 6, 25] #minstress
 
 
 route1 = []
@@ -547,13 +547,15 @@ initialSolutionsList.append(route2)
 # 1 = fitnessbasiert
 # 2 = turnierbasiert
 selectionMethod = 2
-k = 10
+k = 50
 #Run the genetic algorithm
 #modify parameters popSize, eliteSize, mutationRate, generations to search for the best solution
 #modify objectiveNrUsed to use different objectives:
 # 1= Minimize distance, 2 = Minimize stress, 3 = MinimizeBoth
+#bestRoute = geneticAlgorithm(objectiveNrUsed=3, specialInitialSolutions = initialSolutionsList, population=cityList,
+#                             popSize=100, eliteSize=20, mutationRate=0.01, generations=500)
 bestRoute = geneticAlgorithm(objectiveNrUsed=3, specialInitialSolutions = initialSolutionsList, population=cityList,
-                             popSize=100, eliteSize=20, mutationRate=0.01, generations=500)
-#print(bestRoute)
+                             popSize=500, eliteSize=50, mutationRate=0.001, generations=1000)
+print(bestRoute)
 
-#plotRoute(bestRoute, "Best final route")
+plotRoute(bestRoute, "Best final route")

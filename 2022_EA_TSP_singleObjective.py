@@ -385,17 +385,17 @@ population=cityList
 
 min_dist = (1984.0,1,100,20,0.1,500)
 min_stress = (6152.8,2,100,20,0.1,500)
-
+reps = 1*3*2*2*2
 counter = 0
-for objectiveNrUsed in [1,2]:
-    for popSize in [200]:
-        for eliteSize in [50]:
-            for mutationRate in [0.01]:
-                for generations in [500]:
+for objectiveNrUsed in [2]:
+    for popSize in [100,125,150]:
+        for eliteSize in [20,50]:
+            for mutationRate in [0.01,0.001]:
+                for generations in [500,1000]:
                     counter += 1
                     print("Iteration "+str(counter)+"/"+str(reps))
                     pdf = PdfPages('results/BA_Meta1_o' + str(objectiveNrUsed) + '_ps' + str(popSize) + '_es' + str(eliteSize) + '_mr' + str(mutationRate) + '_g' + str(generations) + '.pdf')
-                    makePDFpage(printableCities(cityList))
+                    #makePDFpage(printableCities(cityList))
                     bestRoute = geneticAlgorithm(objectiveNrUsed, population, popSize, eliteSize, mutationRate, generations)
                     makePDFpage(printableCities(bestRoute))
                     print(bestRoute)
