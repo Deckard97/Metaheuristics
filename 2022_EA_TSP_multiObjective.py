@@ -108,7 +108,6 @@ def createRoute(cityList):
 def initialPopulation(popSize, cityList, specialInitialSolutions):
     population = []
     
-    #TODO: Hinzufügen der speziellen Initiallösungen aus specialInitialSolutions
     population += specialInitialSolutions
 
     numberInitialSolutions = len(specialInitialSolutions)
@@ -132,9 +131,7 @@ def rankRoutes(population, objectiveNrUsed):
         for i in range(0,len(population)):
             fitnessResults[i] = Fitness(population[i]).routeFitnessStressBased()
     elif (objectiveNrUsed == 3):
-        #TODO: passender Aufruf der bestehenden Fitnessberechnung
         fitnessResults = rankRoutesBasedOnDominance(population)
-        #print("Here is something missing")
     return sorted(fitnessResults.items(), key = operator.itemgetter(1), reverse = True)
 
 #Provide Pareto-Based Fitness Calculation <<<<<<<<<<<<
@@ -191,27 +188,35 @@ def computeEuclideanDistance(distanceA, distanceB, stressA, stressB):
 #Create a selection function that will be used to make the list of parent routes
 def selection(popRanked, eliteSize):
     selectionResults = []
-    #TODO: Z.B. Turnierbasierte Selektion statt fitnessproportionaler Selektion
     # roulette wheel by calculating a relative fitness weight for each individual
     df = pd.DataFrame(np.array(popRanked), columns=["Index","Fitness"])
     df['cum_sum'] = df.Fitness.cumsum()
     df['cum_perc'] = 100*df.cum_sum/df.Fitness.sum()
-    
+
     #We’ll also want to hold on to our best routes, so we introduce elitism
     for i in range(0, eliteSize):
         selectionResults.append(popRanked[i][0])
-    #we compare a randomly drawn number to these weights to select our mating pool
-    for i in range(0, len(popRanked) - eliteSize):
-        pick = 100*random.random()
-        for i in range(0, len(popRanked)):
-            if pick <= df.iat[i,3]:
-                selectionResults.append(popRanked[i][0])
-                break
+    if selectionMethod == 1: # FITNESSBASIERT
+        #we compare a randomly drawn number to these weights to select our mating pool
+        for i in range(0, len(popRanked) - eliteSize):
+            pick = 100*random.random()
+            for i in range(0, len(popRanked)):
+                if pick <= df.iat[i,3]:
+                    selectionResults.append(popRanked[i][0])
+                    break
+    if selectionMethod == 2:
+        while len(selectionResults)<len(popRanked):
+            competition = random.sample(popRanked, k)
+            winner = competition[0]
+            for i in range(0,k):
+                if competition[i][1] > winner[1]:
+                    winner = competition[i]
+            selectionResults.append(winner[0])
+
     return selectionResults
     
 def selectionWithArchive(popRanked):
     selectionResults = []
-    #TODO: Z.B. Turnierbasierte Selektion statt fitnessproportionaler Selektion
     # roulette wheel by calculating a relative fitness weight for each individual
     df = pd.DataFrame(np.array(popRanked), columns=["Index","Fitness"])
     df['cum_sum'] = df.Fitness.cumsum()
@@ -225,13 +230,23 @@ def selectionWithArchive(popRanked):
             selectionResults.append(popRanked[i][0])
     currentArchiveSize = len(selectionResults)
 
-    #we compare a randomly drawn number to these weights to select our mating pool
-    for i in range(0, len(popRanked) - currentArchiveSize):
-        pick = 100*random.random()
-        for i in range(0, len(popRanked)):
-            if pick <= df.iat[i,3]:
-                selectionResults.append(popRanked[i][0])
-                break
+    if selectionMethod == 1:
+        #we compare a randomly drawn number to these weights to select our mating pool
+        for i in range(0, len(popRanked) - currentArchiveSize):
+            pick = 100*random.random()
+            for i in range(0, len(popRanked)):
+                if pick <= df.iat[i,3]:
+                    selectionResults.append(popRanked[i][0])
+                    break
+    if selectionMethod == 2:
+        while len(selectionResults)<len(popRanked):
+            competition = random.sample(popRanked, k)
+            winner = competition[0]
+            for i in range(0,k):
+                if competition[i][1] > winner[1]:
+                    winner = competition[i]
+            selectionResults.append(winner[0])
+
     return selectionResults
 
 #Create mating pool
@@ -393,7 +408,6 @@ def plotPopulationAndObjectiveValues(population,title):
 def geneticAlgorithm(objectiveNrUsed, specialInitialSolutions, population, popSize, eliteSize, mutationRate, generations):
     #create initial population
     pop = initialPopulation(popSize, population, specialInitialSolutions)
-    
     archiveUsed = False
     
     #provide statistics about best initial solution with regard to chosen objective
@@ -514,7 +528,7 @@ def getCityBasedOnNr(cityList,nr):
     
 #Provide special initial solutions     <<<<<<<<<<<
 cityNumbersRoute1 = [10,19,12,14,22,4,1,15,7,2,11,5,16,23,6,17,20,25,9,18,13,3,24,21,8] #mindist
-cityNumbersRoute2 = [23,6,13,22,25,1,17,11,24,8,16,4,12,19,15,5,10,20,2,14,7,21,3,18,9] #minstress
+cityNumbersRoute2 = [1, 17, 11, 19, 12, 23, 22, 13, 6, 21, 7, 14, 2, 24, 8, 16, 4, 20, 10, 5, 15, 3, 18, 9, 25] #minstress
 
 
 route1 = []
@@ -529,8 +543,11 @@ for nr in cityNumbersRoute2:
 initialSolutionsList = []
 initialSolutionsList.append(route1)
 initialSolutionsList.append(route2)
-#TODO: Spezielle Intiallösungen der initialSolutionsList übergeben
-    
+
+# 1 = fitnessbasiert
+# 2 = turnierbasiert
+selectionMethod = 2
+k = 10
 #Run the genetic algorithm
 #modify parameters popSize, eliteSize, mutationRate, generations to search for the best solution
 #modify objectiveNrUsed to use different objectives:

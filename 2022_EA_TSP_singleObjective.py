@@ -43,7 +43,8 @@ class City:
 
     #provide information about city
     def __repr__(self):
-        return "C"+str(self.nr)+"_"+"(" + str(self.x) + "," + str(self.y) + ")_(T:"+str(self.traffic) +")"
+        #return "C"+str(self.nr)+"_"+"(" + str(self.x) + "," + str(self.y) + ")_(T:"+str(self.traffic) +")"
+        return str(self.nr)
 
 #Create a fitness function
 class Fitness:
@@ -376,7 +377,7 @@ def printableCities(arr):
     print_str += "]"
     return print_str
 
-#Run the genetic algorithm
+#Run the genetic algorithmc
 #modify parameters popSize, eliteSize, mutationRate, generations to search for the best solution
 #modify objectiveNrUsed to use different objectives:
 # 1= Minimize distance, 2 = Minimize stress
@@ -384,11 +385,15 @@ population=cityList
 
 min_dist = (1984.0,1,100,20,0.1,500)
 min_stress = (6152.8,2,100,20,0.1,500)
+
+counter = 0
 for objectiveNrUsed in [1,2]:
-    for popSize in [300,400]:
-        for eliteSize in [30,40]:
-            for mutationRate in [0.001,0.0001]:
-                for generations in [500,700]:
+    for popSize in [200]:
+        for eliteSize in [50]:
+            for mutationRate in [0.01]:
+                for generations in [500]:
+                    counter += 1
+                    print("Iteration "+str(counter)+"/"+str(reps))
                     pdf = PdfPages('results/BA_Meta1_o' + str(objectiveNrUsed) + '_ps' + str(popSize) + '_es' + str(eliteSize) + '_mr' + str(mutationRate) + '_g' + str(generations) + '.pdf')
                     makePDFpage(printableCities(cityList))
                     bestRoute = geneticAlgorithm(objectiveNrUsed, population, popSize, eliteSize, mutationRate, generations)
