@@ -54,6 +54,7 @@ class Fitness:
         self.stress = 0
         self.fitnessDistanceBased = 0.0
         self.fitnessStressBased = 0.0
+
     
     #fitness calculation for objective: distance
     #1. distance calculation
@@ -67,7 +68,10 @@ class Fitness:
                     toCity = self.route[i + 1]
                 else:
                     toCity = self.route[0]
-                pathDistance += fromCity.distance(toCity)
+                #pathDistance += fromCity.distance(toCity)
+                fromCityNr = fromCity.nr-1
+                toCityNr = toCity.nr-1
+                pathDistance += distances[fromCityNr][toCityNr]
             self.distance = pathDistance
         return self.distance
     
@@ -89,7 +93,10 @@ class Fitness:
                     toCity = self.route[i + 1]
                 else:
                     toCity = self.route[0]
-                pathStress += fromCity.stress(toCity)
+                #pathStress += fromCity.stress(toCity)
+                fromCityNr = fromCity.nr-1
+                toCityNr = toCity.nr-1
+                pathStress += stresses[fromCityNr][toCityNr]
             self.stress = pathStress
         return self.stress
     
@@ -339,7 +346,7 @@ random.seed(1111)
 for i in range(1,26):
     cityList.append(City(nr= i, traffic=int(random.random()*40), x=int(random.random() * 200), y=int(random.random() * 200)))
     
-print(cityList)
+#print(cityList)
 
 
 def plotRoute(cityList, title):
@@ -371,8 +378,6 @@ def printableCities(arr):
     for i in range(len(arr)):
         if i != 0:
             print_str += ", "
-        if i%5 == 0 and i != 0:
-            print_str += "\n"
         print_str += str(arr[i])
     print_str += "]"
     return print_str
@@ -383,19 +388,27 @@ def printableCities(arr):
 # 1= Minimize distance, 2 = Minimize stress
 population=cityList
 
+# Make one calculation for all distances/stresses and store them in arrays
+distances = [[toCity.distance(fromCity) for toCity in cityList] for fromCity in cityList]
+stresses = [[toCity.stress(fromCity) for toCity in cityList] for fromCity in cityList]
+
+print(distances)
+
 min_dist = (1984.0,1,100,20,0.1,500)
 min_stress = (6152.8,2,100,20,0.1,500)
-reps = 1*3*2*2*2
+reps = 2*3*3*2*2
 counter = 0
-for objectiveNrUsed in [2]:
+for objectiveNrUsed in [2,1]:
     for popSize in [100,125,150]:
-        for eliteSize in [20,50]:
+        for eliteSize in [10,20,30]:
             for mutationRate in [0.01,0.001]:
                 for generations in [500,1000]:
                     counter += 1
                     print("Iteration "+str(counter)+"/"+str(reps))
+                    params = "Objective: "+str(objectiveNrUsed) +" | popSize: "+str(popSize) +" | eliteSize: "+str(eliteSize) +" | mutationRate: "+str(mutationRate)+" | generations: "+ str(generations)
+                    print(params)
                     pdf = PdfPages('results/BA_Meta1_o' + str(objectiveNrUsed) + '_ps' + str(popSize) + '_es' + str(eliteSize) + '_mr' + str(mutationRate) + '_g' + str(generations) + '.pdf')
-                    #makePDFpage(printableCities(cityList))
+                    makePDFpage(params)
                     bestRoute = geneticAlgorithm(objectiveNrUsed, population, popSize, eliteSize, mutationRate, generations)
                     makePDFpage(printableCities(bestRoute))
                     print(bestRoute)
