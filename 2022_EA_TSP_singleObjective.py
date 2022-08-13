@@ -392,16 +392,14 @@ population=cityList
 distances = [[toCity.distance(fromCity) for toCity in cityList] for fromCity in cityList]
 stresses = [[toCity.stress(fromCity) for toCity in cityList] for fromCity in cityList]
 
-print(distances)
-
 min_dist = (1984.0,1,100,20,0.1,500)
 min_stress = (6152.8,2,100,20,0.1,500)
-reps = 2*3*3*2*2
+reps = 2*4*3*3*2
 counter = 0
-for objectiveNrUsed in [2,1]:
-    for popSize in [100,125,150]:
+for objectiveNrUsed in [1,2]:
+    for popSize in [100,125,150,200]:
         for eliteSize in [10,20,30]:
-            for mutationRate in [0.01,0.001]:
+            for mutationRate in [0.015,0.01,0.001]:
                 for generations in [500,1000]:
                     counter += 1
                     print("Iteration "+str(counter)+"/"+str(reps))
