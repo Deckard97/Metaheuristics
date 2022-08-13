@@ -221,6 +221,7 @@ def selection(popRanked, eliteSize):
     
 def selectionWithArchive(popRanked):
     selectionResults = []
+
     # roulette wheel by calculating a relative fitness weight for each individual
     df = pd.DataFrame(np.array(popRanked), columns=["Index","Fitness"])
     df['cum_sum'] = df.Fitness.cumsum()
@@ -229,21 +230,22 @@ def selectionWithArchive(popRanked):
     #We’ll also want to hold on to our best routes, so we introduce elitism
     #here wie hold all non-dominated solutions
     #TODO (optional): ein festes Archiv vorsehen wie es im ursprünglichen SPEA2 vorgesehen ist 
-    for i in range(0, len(popRanked)):
-        if (popRanked[i][1] > 1):
-            selectionResults.append(popRanked[i][0])
-    currentArchiveSize = len(selectionResults)
+    # for i in range(0, len(popRanked)):
+    #     if (popRanked[i][1] > 1):
+    #         selectionResults.append(popRanked[i][0])
+    # currentArchiveSize = len(selectionResults)
 
     if selectionMethod == 1: # FITNESSBASIERT
         #we compare a randomly drawn number to these weights to select our mating pool
-        for i in range(0, len(popRanked) - currentArchiveSize):
+        for i in range(0, len(popRanked) - archiveSize):
             pick = 100*random.random()
             for i in range(0, len(popRanked)):
                 if pick <= df.iat[i,3]:
                     selectionResults.append(popRanked[i][0])
                     break
-    if selectionMethod == 2:
-        while len(selectionResults)<len(popRanked):
+    if selectionMethod == 2: # TURNIERBASIERT
+        print(selectionResults)
+        while len(selectionResults)<(len(popRanked)-archiveSize):
             competition = random.sample(popRanked, k)
             winner = competition[0]
             for i in range(0,k):
@@ -256,6 +258,14 @@ def selectionWithArchive(popRanked):
 #Create mating pool
 def matingPool(population, selectionResults):
     matingpool = []
+    for i in range(0, len(selectionResults)):
+        index = selectionResults[i]
+        print(index)
+        matingpool.append(population[index])
+    return matingpool
+
+def matingPoolWithArchive(population, selectionResults, archive):
+    matingpool = archive
     for i in range(0, len(selectionResults)):
         index = selectionResults[i]
         matingpool.append(population[index])
@@ -301,6 +311,21 @@ def breedPopulation(matingpool, eliteSize):
         children.append(child)
     return children
 
+def breedPopulationWithArchive(matingpool, archive):
+    children = []
+    length = len(matingpool) - eliteSize
+    pool = random.sample(matingpool, len(matingpool))
+
+    #we use elitism to retain the best routes from the current population.
+    for i in range(0,eliteSize):
+        children.append(matingpool[i])
+
+    #we use the breed function to fill out the rest of the next generation.    
+    for i in range(0, length):
+        child = breed(pool[i], pool[len(matingpool)-i-1])
+        children.append(child)
+    return children
+
 #Create function to mutate a single route
 #we’ll use swap mutation.
 #This means that, with specified low probability, 
@@ -332,22 +357,66 @@ def mutatePopulation(population, mutationRate, eliteSize):
         mutatedPop.append(mutatedInd)
     return mutatedPop
 
-def determineNonDominatedArchive(currentGen, popRanked):
+# def determineNonDominatedArchive(currentGen, popRanked):
+#     archive = []
+#     for i in range(0, len(popRanked)):
+#         if (popRanked[i][1] > 1):
+#             archive.append(currentGen[popRanked[i][0]])
+#     sameSolutions = []
+#     for i in range(0, len(archive)-1):
+#         for j in range(i+1, len(archive)):
+#             if isSameSolution(archive[i], archive[j]):
+#                 sameSolutions.append(j)
+#     newArchive = []
+#     for i in range(0, len(archive)):
+#         if (not sameSolutions.__contains__(i)):
+#             newArchive.append(archive[i])
+#     return newArchive
+
+def determineNonDominatedArchive(currentGen, popRanked, oldArchive):
     archive = []
+    for i in range(0, len(oldArchive)):
+         if (popRanked[oldArchive[i]][1] > 1):
+             archive.append(currentGen[popRanked[oldArchive[i]][0]])
+
+    nonDominated = []
     for i in range(0, len(popRanked)):
         if (popRanked[i][1] > 1):
-            archive.append(currentGen[popRanked[i][0]])
+            for j in range(0,len(archive)):
+                if isSameSolution(currentGen[popRanked[i][0]],archive[j]):
+                    break
+                else:
+                    archive.append(popRanked[i][0])
+        else:
+            nonDominated.append(currentGen[popRanked[i][0]])
     #-------Prüfung auf Gleichheit bei Bedarf auskommentieren 
-    sameSolutions = []
-    for i in range(0, len(archive)-1):
-        for j in range(i+1, len(archive)):
-            if isSameSolution(archive[i], archive[j]):
-                sameSolutions.append(j)
-    newArchive = []
-    for i in range(0, len(archive)):
-        if (not sameSolutions.__contains__(i)):
-            newArchive.append(archive[i])
-    return newArchive
+    # sameSolutions = []
+    # for i in range(0, len(archive)-1):
+    #     for j in range(i+1, len(archive)):
+    #         if isSameSolution(archive[i], archive[j]):
+    #             sameSolutions.append(j)
+    # newArchive = []
+    # for i in range(0, len(archive)):
+    #     if (not sameSolutions.__contains__(i)):
+    #         newArchive.append(archive[i])
+    if len(archive) < archiveSize:
+        fillUp = archiveSize-len(archive)
+        archive.append(random.sample(nonDominated,fillUp))
+        # while fillUp != 0:
+        #     while True:
+        #         newMember = random.sample(popRanked,1)
+        #         for j in range(0,len(archive)):
+        #             if isSameSolution(newMember,archive[j]):
+        #                 break
+        #             if j == len(archive)-1:
+        #                 archive.append(newMember)
+        #         if fillUp > archiveSize-len(archive):
+        #             fillUp -= 1
+        #             break
+    if len(archive) > archiveSize:
+        del archive[archiveSize:len(archive)]
+
+    return archive
 
 def determineNonDominatedArchiveSize(popRanked):
     archiveSize = 0
@@ -376,7 +445,7 @@ def isSameSolution(individuumA, individuumB):
 #Finally, we then create our new generation using the breedPopulation function 
 # and then applying mutation using the mutatePopulation function. 
 
-def nextGeneration(currentGen, eliteSize, mutationRate, objectiveNrUsed, archiveUsed): 
+def nextGeneration(currentGen, eliteSize, mutationRate, objectiveNrUsed, archiveUsed,oldArchive): 
    # rankRoutesBasedOnDominance(currentGen)
     popRanked = rankRoutes(currentGen,objectiveNrUsed)
 
@@ -388,12 +457,13 @@ def nextGeneration(currentGen, eliteSize, mutationRate, objectiveNrUsed, archive
     else:
         #<<<<< use archiv
         #TODO (optional): ein festes Archiv vorsehen wie es im ursprünglichen SPEA2 vorgesehen ist 
+        archive = determineNonDominatedArchive(currentGen, popRanked, oldArchive)
         selectionResults = selectionWithArchive(popRanked)
         matingpool = matingPool(currentGen, selectionResults)
-        archiveSize = determineNonDominatedArchiveSize(popRanked)
-        children = breedPopulation(matingpool, archiveSize)
+        #archiveSize = determineNonDominatedArchiveSize(popRanked)
+        children = breedPopulation(matingpool, eliteSize)
         #eliteSize is used to maintain solutions that should be in an archive
-        nextGeneration = mutatePopulation(children, mutationRate, eliteSize)
+        nextGeneration = mutatePopulation(children, mutationRate, archive)
     return nextGeneration
 
 #Final step: create the genetic algorithm
@@ -438,11 +508,12 @@ def geneticAlgorithm(objectiveNrUsed, specialInitialSolutions, population, popSi
     progressStress = []
     progressStress.append(1 / rankRoutes(pop,2)[0][1])
     
+    archive = []
     
     #create new generations of populations
     for i in range(0, generations):
         print(i, end=", ")
-        pop = nextGeneration(pop, eliteSize, mutationRate,objectiveNrUsed,archiveUsed)
+        pop = nextGeneration(pop, eliteSize, mutationRate,objectiveNrUsed,archiveUsed,archive)
         #store infos to plot progress when finished
         progressDistance.append(1 / rankRoutes(pop,1)[0][1])
         progressStress.append(1 / rankRoutes(pop,2)[0][1])
@@ -560,6 +631,8 @@ selectionMethod = 2
 # Parameter k for contestants in competition
 k = 50
 
+archiveSize = 20
+
 #Run the genetic algorithm
 #modify parameters popSize, eliteSize, mutationRate, generations to search for the best solution
 #modify objectiveNrUsed to use different objectives:
@@ -567,7 +640,7 @@ k = 50
 #bestRoute = geneticAlgorithm(objectiveNrUsed=3, specialInitialSolutions = initialSolutionsList, population=cityList,
 #                             popSize=100, eliteSize=20, mutationRate=0.01, generations=500)
 bestRoute = geneticAlgorithm(objectiveNrUsed=3, specialInitialSolutions = initialSolutionsList, population=cityList,
-                             popSize=500, eliteSize=50, mutationRate=0.001, generations=1000)
+                             popSize=500, eliteSize=archiveSize, mutationRate=0.001, generations=1000)
 print(bestRoute)
 
 plotRoute(bestRoute, "Best final route")
